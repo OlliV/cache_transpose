@@ -1,8 +1,10 @@
 /*
-* (C) Iain Fraser
-* Excercise in cache aware and cache oblivous algorithms. Simplify problem
-* by only dealing with square matrices and out situ.
-*/
+ * (C) Olli Vanhoja - Added cache semi-aware version, see git-log for complete
+ *                    list of changes.
+ * (C) Iain Fraser
+ * Excercise in cache aware and cache oblivous algorithms. Simplify problem
+ * by only dealing with square matrices and out situ.
+ */
 
 #include <stdio.h>
 #include <assert.h>
@@ -47,7 +49,7 @@ void init(matrix m)
     }
 }
 
-/* cache ignorant implementation. */
+/* Cache ignorant implementation. */
 void naive(matrix in, matrix out)
 {
     for(int i = 0; i < N; i++) {
@@ -80,7 +82,7 @@ void caware(matrix in, matrix out)
     }
 }
 
-/* Cache semi-aware */
+/* Cache "semi-aware" */
 #define LCAW2 8
 void caware2(matrix in, matrix out)
 {
