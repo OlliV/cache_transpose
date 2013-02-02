@@ -112,13 +112,13 @@ void caware2(matrix in, matrix out)
 /* Autotuning cache-aware */
 int tune_l(int l, uint32_t delta);
 #define LCAW3 4u
-struct timeval caw3_tv;
 void caware3(matrix in, matrix out)
 {
     int row, col;
     int rlimit, climit;
     int i, j;
     static int l = LCAW3;
+    static struct timeval caw3_tv;
 
     gettimeofday(&caw3_tv, NULL);
     uint32_t start = caw3_tv.tv_sec * 1000 + caw3_tv.tv_usec / 1000;
@@ -151,9 +151,9 @@ void caware3(matrix in, matrix out)
 int tune_l(int l, uint32_t delta)
 {
     static uint32_t davg = 0;
-    davg = davg + 2 * (delta / 4 - davg / 4);
+    davg = davg + 2 * (delta >> 2 - davg >> 2);
 
-    if (delta > davg) {
+    if (delta > davg + 5) {
         l = l >> 1;
         davg = delta + 10;
     } else {
