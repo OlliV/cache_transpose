@@ -109,8 +109,62 @@ void caware2(matrix in, matrix out)
     }
 }
 
-#define OBLIV_MIN   4 /* number of words in submatrix when cache oblivious gives up */
+/* Autotuning cache-aware */
+int tune_l(int l, uint32_t delta);
+#define LCAW3 4u
+struct timeval caw3_tv;
+void caware3(matrix in, matrix out)
+{
+    int row, col;
+    int rlimit, climit;
+    int i, j;
+    static int l = LCAW3;
 
+    gettimeofday(&caw3_tv, NULL);
+    uint32_t start = caw3_tv.tv_sec * 1000 + caw3_tv.tv_usec / 1000;
+
+    assert(!(N % l));
+
+    for(row = 0; row < N; row += l) {
+        rlimit = row + l;
+        for(col = 0; col < N; col += l) {
+            climit = col + l;
+
+            /* do transpose on this submatrix */
+            i = row;
+            do {
+                j = col;
+                do {
+                    out[j][i] = in[i][j];
+                } while (++j < climit);
+            } while (++i < rlimit);
+        }
+    }
+
+    gettimeofday(&caw3_tv, NULL);
+    uint32_t end = caw3_tv.tv_sec * 1000 + caw3_tv.tv_usec / 1000;
+
+    l = tune_l(l, end - start);
+}
+
+/* Tune l for caware3 */
+int tune_l(int l, uint32_t delta)
+{
+    static uint32_t davg = 0;
+    davg = davg + 2 * (delta / 4 - davg / 4);
+
+    if (delta > davg) {
+        l = l >> 1;
+        davg = delta + 10;
+    } else {
+        l = l << 1;
+    }
+    if (l == 0 || l > (int)L) l = LCAW2;
+
+    return l;
+}
+
+#define OBLIV_MIN 4 /* number of words in submatrix when cache oblivious gives up */
 void recur_coblivous(matrix in, matrix out, int row_off, int col_off, int m, int n)
 {
     if(m > OBLIV_MIN || n > OBLIV_MIN) {
@@ -199,12 +253,21 @@ int main(int argc, char* argv[])
     init(*out);
     experiment("naive", naive, 3, 100, *m, *out);
     verify(*out);
+
     init(*out);
     experiment("cache aware", caware, 3, 100, *m, *out);
     verify(*out);
+
     init(*out);
     experiment("cache aware2", caware2, 3, 100, *m, *out);
     verify(*out);
+
+    for (int i = 0; i < 3; i++) {
+        init(*out);
+        experiment("cache aware3", caware3, 3, 100, *m, *out);
+        verify(*out);
+    }
+
     init(*out);
     experiment("cache oblivous", coblivous, 3, 100, *m, *out);
     verify(*out);
